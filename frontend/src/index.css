@@ -1,0 +1,320 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Antigravity IDE Light Cream/Sepia High-Fidelity Glassmorphism System */
+:root {
+  --bg-deep: #FAF5EB;          /* Warmer, cozier cream background */
+  --bg-sidebar: #ECE2C6;       /* Warm cozy sepia sidebar */
+  --text-main: #586E75;
+  --text-dark: #073642;
+  --text-light: #93A1A1;
+  
+  /* Reduced visual clutter: Teal, Blue, and Purple are unified to Sage Green and Warm Gold */
+  --accent-teal: #859900;      /* Mapped to Sage Green */
+  --accent-blue: #B58900;      /* Mapped to Warm Amber/Gold */
+  --accent-amber: #B58900;     /* Warm Amber/Gold */
+  --accent-purple: #859900;    /* Mapped to Sage Green */
+  --accent-green: #859900;     /* Sage Green */
+  
+  --glass-bg: rgba(253, 250, 242, 0.55); /* Warm translucent cream glass */
+  --glass-border: rgba(255, 255, 255, 0.7);
+  --glass-shadow: 0 12px 36px -4px rgba(95, 75, 45, 0.07), 
+                  inset 0 1px 1px 0 rgba(255, 255, 255, 0.9),
+                  0 1px 3px 0 rgba(0, 0, 0, 0.01);
+}
+
+body {
+  margin: 0;
+  font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--bg-deep);
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(44, 75%, 42%, 0.1) 0px, transparent 55%),
+    radial-gradient(at 100% 0%, hsla(24, 70%, 45%, 0.08) 0px, transparent 55%),
+    radial-gradient(at 50% 100%, hsla(38, 85%, 40%, 0.08) 0px, transparent 55%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+/* Premium Light Glassmorphism Card styling */
+.glass-card {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(20px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-shadow) !important;
+  border-radius: 1.25rem !important;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.glass-card:hover {
+  background: rgba(253, 250, 242, 0.7) !important;
+  border-color: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 
+    0 24px 60px -8px rgba(85, 70, 50, 0.12), 
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.95),
+    0 0 25px 0 rgba(185, 170, 140, 0.03) !important;
+  transform: translateY(-4px) !important;
+}
+
+.glass-header {
+  background: rgba(250, 246, 236, 0.7) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid rgba(185, 170, 140, 0.16) !important;
+  box-shadow: 0 4px 30px rgba(85, 70, 50, 0.02) !important;
+}
+
+/* Glass buttons & inputs */
+.glass-input {
+  background: rgba(255, 255, 255, 0.8) !important;
+  border: 1px solid rgba(185, 170, 140, 0.25) !important;
+  color: var(--text-dark) !important;
+  border-radius: 0.75rem !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: inset 0 2px 4px 0 rgba(85, 70, 50, 0.01) !important;
+}
+
+.glass-input:focus {
+  border-color: var(--accent-teal) !important;
+  box-shadow: 
+    0 0 0 3px rgba(133, 153, 0, 0.12),
+    inset 0 2px 4px 0 rgba(85, 70, 50, 0.01) !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+}
+
+/* Vibrant ACCENT GLOWS - Unified to Sage and Gold */
+.glow-teal:hover {
+  box-shadow: 
+    0 20px 40px -15px rgba(133, 153, 0, 0.15), 
+    0 0 20px 0 rgba(133, 153, 0, 0.04),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(133, 153, 0, 0.35) !important;
+}
+
+.glow-blue:hover {
+  box-shadow: 
+    0 20px 40px -15px rgba(181, 137, 0, 0.12), 
+    0 0 20px 0 rgba(181, 137, 0, 0.03),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(181, 137, 0, 0.25) !important;
+}
+
+.glow-amber:hover {
+  box-shadow: 
+    0 20px 40px -15px rgba(181, 137, 0, 0.16), 
+    0 0 20px 0 rgba(181, 137, 0, 0.05),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(181, 137, 0, 0.35) !important;
+}
+
+.glow-purple:hover {
+  box-shadow: 
+    0 20px 40px -15px rgba(133, 153, 0, 0.12), 
+    0 0 20px 0 rgba(133, 153, 0, 0.03),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(133, 153, 0, 0.25) !important;
+}
+
+/* Alert Keyframe Animations */
+@keyframes anomaly-pulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 16px rgba(181, 137, 0, 0.08),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.8);
+    border-color: rgba(181, 137, 0, 0.25);
+  }
+  50% {
+    box-shadow: 
+      0 0 32px rgba(181, 137, 0, 0.28),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.8);
+    border-color: rgba(181, 137, 0, 0.55);
+    background: rgba(253, 246, 227, 0.5) !important;
+  }
+}
+
+.animate-anomaly-pulse {
+  animation: anomaly-pulse 2.5s infinite ease-in-out;
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; filter: drop-shadow(0 0 8px currentColor); }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s infinite ease-in-out;
+}
+
+/* Huge Floating Glow Spots in Background - Redefined to Warm Gold and Burnt Terracotta */
+.glow-spot-teal {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(181, 137, 0, 0.09) 0%, transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.glow-spot-blue {
+  position: absolute;
+  width: 650px;
+  height: 650px;
+  background: radial-gradient(circle, rgba(203, 75, 22, 0.07) 0%, transparent 70%);
+  filter: blur(65px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* CSS Theme Translators (Translating Dark Utility classes to elegant warm Sepia values) */
+.text-white, .text-slate-100 {
+  color: var(--text-dark) !important;
+}
+.text-slate-200 {
+  color: #073642 !important;
+}
+.text-slate-300 {
+  color: #586E75 !important;
+}
+.text-slate-400 {
+  color: #839496 !important;
+}
+.text-slate-500 {
+  color: #93A1A1 !important;
+}
+
+.text-blue-400, .text-indigo-400 {
+  color: var(--accent-blue) !important;
+}
+.text-emerald-400, .text-emerald-400\/80 {
+  color: var(--accent-teal) !important;
+}
+.text-amber-500 {
+  color: var(--accent-amber) !important;
+}
+.text-[#c084fc] {
+  color: var(--accent-purple) !important;
+}
+
+/* Custom Scope Badge Overrides (Warm Green, Gold, Burnt Orange/Terracotta) */
+.bg-cyan-500\/10 {
+  background-color: rgba(133, 153, 0, 0.08) !important;
+}
+.text-cyan-400 {
+  color: var(--accent-green) !important;
+}
+
+.bg-yellow-500\/10 {
+  background-color: rgba(181, 137, 0, 0.08) !important;
+}
+.text-yellow-400 {
+  color: var(--accent-amber) !important;
+}
+
+.bg-purple-500\/10 {
+  background-color: rgba(203, 75, 22, 0.08) !important;
+}
+.text-purple-400 {
+  color: #CB4B16 !important;
+}
+
+/* Emissions Share progress bars overrides */
+.bg-cyan-400 {
+  background-color: var(--accent-green) !important;
+}
+.bg-yellow-400 {
+  background-color: var(--accent-amber) !important;
+}
+.bg-purple-400 {
+  background-color: #CB4B16 !important;
+}
+
+/* Button & gradient overrides for premium feel */
+.bg-gradient-to-tr.from-emerald-400.to-teal-500 {
+  background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-amber) 100%) !important;
+  box-shadow: 0 0 15px rgba(133, 153, 0, 0.2) !important;
+}
+
+.bg-gradient-to-r.from-\[\#2AA198\].to-\[\#859900\] {
+  background: linear-gradient(to right, var(--accent-green), var(--accent-amber)) !important;
+  box-shadow: 0 4px 20px rgba(133, 153, 0, 0.15) !important;
+}
+.bg-gradient-to-r.from-\[\#2AA198\].to-\[\#859900\]:hover {
+  background: linear-gradient(to right, var(--accent-amber), var(--accent-green)) !important;
+  box-shadow: 0 6px 25px rgba(133, 153, 0, 0.22) !important;
+}
+
+.bg-emerald-600 {
+  background-color: var(--accent-green) !important;
+}
+.bg-emerald-600:hover {
+  background-color: #728300 !important;
+}
+
+/* Background overrides to light glass */
+.bg-slate-950\/60, .bg-slate-950\/40, .bg-slate-950\/30, .bg-slate-950, .bg-[#0B0F19]\/80 {
+  background-color: rgba(253, 250, 242, 0.5) !important;
+  border-color: rgba(185, 170, 140, 0.16) !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5) !important;
+}
+
+.bg-slate-900\/60, .bg-slate-900\/10 {
+  background-color: rgba(253, 250, 242, 0.35) !important;
+}
+
+.bg-slate-900 {
+  background-color: rgba(253, 250, 242, 0.45) !important;
+}
+
+/* th/td elements override */
+th {
+  background-color: rgba(238, 232, 213, 0.65) !important;
+  color: var(--text-dark) !important;
+  border-bottom: 1px solid rgba(185, 170, 140, 0.22) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+}
+
+tr {
+  border-bottom: 1px solid rgba(185, 170, 140, 0.1) !important;
+}
+
+tr:hover {
+  background-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Drawer adjustments - matches #EEE8D5 */
+.bg-slate-900\/95 {
+  background-color: rgba(238, 232, 213, 0.96) !important;
+  border-left: 1px solid rgba(185, 170, 140, 0.3) !important;
+  box-shadow: -10px 0 50px rgba(85, 70, 50, 0.14) !important;
+  backdrop-filter: blur(30px) !important;
+  -webkit-backdrop-filter: blur(30px) !important;
+}
+
+/* Borders */
+.border-slate-800, .border-slate-850, .border-slate-700\/30, .border-slate-800\/80, .border-slate-850\/80 {
+  border-color: rgba(185, 170, 140, 0.16) !important;
+}
+
+.divide-slate-850\/80 > * + * {
+  border-color: rgba(185, 170, 140, 0.12) !important;
+}
+
+/* Dropdown list overlays */
+select.glass-input option {
+  background-color: #FCF9F2 !important;
+  color: var(--text-dark) !important;
+}
+
