@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   CheckCircle,
   UploadCloud,
-  FileText,
   Filter,
   ChevronLeft,
   ChevronRight,
@@ -14,7 +13,6 @@ import {
   Edit2,
   Check,
   Flag,
-  ArrowRight,
   TrendingUp,
   RefreshCw,
   CornerDownRight,
@@ -22,7 +20,7 @@ import {
 } from 'lucide-react';
 
 // Setup base configuration for API. Customize this as per dev environment setup.
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = 'https://carbonlens-esg-platform.onrender.com/api';
 
 // Simple Authorization config mapping for multi-tenant simulation
 const AXIOS_CONFIG = {
@@ -44,7 +42,7 @@ export default function Dashboard() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [jobsLoading, setJobsLoading] = useState(false);
-  
+
   // Pagination & Filters
   const [page, setPage] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(false);
@@ -58,7 +56,7 @@ export default function Dashboard() {
   // Selection
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [selectedRecord, setSelectedRecord] = useState(null);
-  
+
   // Ingestion Upload
   const [uploadSource, setUploadSource] = useState('SAP_PROCUREMENT');
   const [isUploading, setIsUploading] = useState(false);
@@ -211,11 +209,11 @@ export default function Dashboard() {
   // Run initial queries
   useEffect(() => {
     fetchData();
-  }, [page, filters, isMockMode]);
+  }, [fetchData]);
 
   useEffect(() => {
     fetchJobs();
-  }, [isMockMode]);
+  }, [fetchJobs]);
 
   // --- UPLOAD HANDLER ---
   const handleUpload = async (e) => {
@@ -246,7 +244,7 @@ export default function Dashboard() {
         }, 1500);
       } else {
         setUploadProgress("Uploading file...");
-        const response = await axios.post(`${API_BASE}/ingestion/`, formData, {
+        await axios.post(`${API_BASE}/ingestion/`, formData, {
           headers: {
             ...AXIOS_CONFIG.headers,
             'Content-Type': 'multipart/form-data'
@@ -280,8 +278,8 @@ export default function Dashboard() {
         // Local mockup state update
         setRecords(prev => prev.map(rec => {
           if (rec.id === recordId) {
-            return { 
-              ...rec, 
+            return {
+              ...rec,
               review_status: newStatus,
               anomaly_flag_reason: reason || rec.anomaly_flag_reason,
               approved_by_email: newStatus === 'APPROVED' ? 'auditor.demo@carbonlens.com' : null,
@@ -290,7 +288,7 @@ export default function Dashboard() {
           }
           return rec;
         }));
-        
+
         // Update metrics representation
         setMetrics(prev => ({
           ...prev,
@@ -383,13 +381,13 @@ export default function Dashboard() {
 
     setLoading(true);
     const idsToProcess = Array.from(selectedIds);
-    
+
     try {
       if (isMockMode) {
         setRecords(prev => prev.map(rec => {
           if (selectedIds.has(rec.id)) {
-            return { 
-              ...rec, 
+            return {
+              ...rec,
               review_status: 'APPROVED',
               approved_by_email: 'bulk.auditor@carbonlens.com',
               approved_at: new Date().toISOString()
@@ -401,7 +399,7 @@ export default function Dashboard() {
         alert("Bulk approval executed.");
       } else {
         // Execute concurrent approvals using views logic
-        await Promise.all(idsToProcess.map(id => 
+        await Promise.all(idsToProcess.map(id =>
           axios.patch(
             `${API_BASE}/records/${id}/review/`,
             { review_status: 'APPROVED' },
@@ -466,25 +464,24 @@ export default function Dashboard() {
 
         <div className="flex items-center gap-4">
           {/* Mock Mode banner */}
-          <div className={`text-xs px-3 py-1.5 rounded-full flex items-center gap-2 border ${
-            isMockMode 
-              ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' 
+          <div className={`text-xs px-3 py-1.5 rounded-full flex items-center gap-2 border ${isMockMode
+              ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
               : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-          }`}>
+            }`}>
             <span className={`h-2 w-2 rounded-full ${isMockMode ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`} />
             {isMockMode ? 'Mock Server Sandbox' : 'Connected to Django API'}
           </div>
 
-          <button 
+          <button
             onClick={() => setIsMockMode(!isMockMode)}
             className="text-xs bg-[#EEE8D5] hover:bg-[#E4DBBF] px-3 py-2 rounded-lg border border-slate-300/80 transition flex items-center gap-1.5 text-[#073642] font-semibold"
           >
             <RefreshCw className="h-3 w-3 text-[#073642]" />
             Switch Mode
           </button>
-          
+
           <div className="h-8 w-px bg-slate-800" />
-          
+
           <div className="text-right">
             <p className="text-sm font-semibold text-slate-200">System Auditor</p>
             <p className="text-xs text-slate-400">HQ Audit Division</p>
@@ -493,7 +490,7 @@ export default function Dashboard() {
       </header>
 
       <main className="flex-1 p-6 space-y-6 max-w-7xl mx-auto w-full">
-        
+
         {/* ROW 1: METRICS AND SCOPE DISTRIBUTIONS */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Metrics summary cards */}
@@ -518,16 +515,14 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className={`glass-card glow-amber p-5 flex items-center justify-between ${
-              metrics.flagged_count > 0 ? 'animate-anomaly-pulse border-amber-500/40 bg-amber-500/5' : ''
-            }`}>
+            <div className={`glass-card glow-amber p-5 flex items-center justify-between ${metrics.flagged_count > 0 ? 'animate-anomaly-pulse border-amber-500/40 bg-amber-500/5' : ''
+              }`}>
               <div>
                 <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Flagged Anomalies</p>
                 <p className="text-3xl font-extrabold mt-2 text-white">{metrics.flagged_count}</p>
               </div>
-              <div className={`h-12 w-12 rounded-xl bg-[#f59e0b]/10 flex items-center justify-center text-amber-500 border border-[#f59e0b]/20 shadow-[0_0_15px_rgba(245,158,11,0.1)] ${
-                metrics.flagged_count > 0 ? 'animate-bounce' : ''
-              }`}>
+              <div className={`h-12 w-12 rounded-xl bg-[#f59e0b]/10 flex items-center justify-center text-amber-500 border border-[#f59e0b]/20 shadow-[0_0_15px_rgba(245,158,11,0.1)] ${metrics.flagged_count > 0 ? 'animate-bounce' : ''
+                }`}>
                 <AlertTriangle className="h-6 w-6" />
               </div>
             </div>
@@ -546,7 +541,7 @@ export default function Dashboard() {
           {/* Scope Distribution Bar Graph Panel */}
           <div className="glass-card glow-purple p-5 space-y-4">
             <h3 className="text-sm font-semibold tracking-wider text-slate-300">Normalized Emissions Shares</h3>
-            
+
             <div className="space-y-3">
               <div>
                 <div className="flex justify-between text-xs mb-1">
@@ -593,8 +588,8 @@ export default function Dashboard() {
             <form onSubmit={handleUpload} className="space-y-4">
               <div>
                 <label className="text-xs text-slate-400 block mb-1.5 font-semibold">Ingestion Source Type</label>
-                <select 
-                  value={uploadSource} 
+                <select
+                  value={uploadSource}
                   onChange={(e) => setUploadSource(e.target.value)}
                   className="w-full glass-input text-slate-100 border border-slate-800/80 text-sm p-2.5 rounded-lg focus:outline-none focus:border-emerald-500"
                 >
@@ -604,22 +599,22 @@ export default function Dashboard() {
                 </select>
               </div>
 
-              <div 
+              <div
                 onClick={() => fileInputRef.current?.click()}
                 className="border border-dashed border-slate-800 hover:border-emerald-400/85 rounded-xl py-6 flex flex-col items-center justify-center cursor-pointer transition bg-slate-950/30 hover:bg-slate-950/50 group"
               >
                 <UploadCloud className="h-8 w-8 text-slate-500 group-hover:text-emerald-400 mb-2 transition" />
                 <span className="text-xs text-slate-300 font-medium">Click to select files</span>
                 <span className="text-[10px] text-slate-500 mt-1">Supports CSV, JSON</span>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
+                <input
+                  type="file"
+                  ref={fileInputRef}
                   onChange={(e) => {
                     if (e.target.files?.[0]) {
                       setUploadProgress(`Selected: ${e.target.files[0].name}`);
                     }
                   }}
-                  className="hidden" 
+                  className="hidden"
                 />
               </div>
 
@@ -630,8 +625,8 @@ export default function Dashboard() {
                 </div>
               )}
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={isUploading}
                 className="w-full bg-[#073642] hover:bg-[#0c4452] text-[#FAF5EB] font-bold py-3 rounded-xl text-sm transition flex items-center justify-center gap-1.5 shadow-[0_4px_12px_rgba(7,54,66,0.15)] hover:shadow-[0_6px_20px_rgba(7,54,66,0.25)] hover:translate-y-[-1px] disabled:opacity-50"
               >
@@ -647,8 +642,8 @@ export default function Dashboard() {
                 <h3 className="font-bold text-sm text-slate-200">Raw Ingestion Job History</h3>
                 <p className="text-xs text-slate-400">Trace records generated by active import batches.</p>
               </div>
-              <button 
-                onClick={fetchJobs} 
+              <button
+                onClick={fetchJobs}
                 className="text-xs text-slate-400 hover:text-white flex items-center gap-1"
               >
                 <RefreshCw className={`h-3 w-3 ${jobsLoading ? 'animate-spin' : ''}`} />
@@ -680,13 +675,12 @@ export default function Dashboard() {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                      job.status === 'COMPLETED' 
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${job.status === 'COMPLETED'
                         ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                         : job.status === 'FAILED'
-                        ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                        : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                    }`}>
+                          ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                          : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                      }`}>
                       {job.status}
                     </span>
                   </div>
@@ -717,7 +711,7 @@ export default function Dashboard() {
                 <span>Filters</span>
               </div>
 
-              <select 
+              <select
                 value={filters.review_status}
                 onChange={(e) => setFilters({ ...filters, review_status: e.target.value })}
                 className="glass-input text-slate-200 border border-slate-800 text-xs p-2 rounded-lg focus:outline-none focus:border-emerald-500"
@@ -728,7 +722,7 @@ export default function Dashboard() {
                 <option value="APPROVED">Approved Records</option>
               </select>
 
-              <select 
+              <select
                 value={filters.scope}
                 onChange={(e) => setFilters({ ...filters, scope: e.target.value })}
                 className="glass-input text-slate-200 border border-slate-800 text-xs p-2 rounded-lg focus:outline-none focus:border-emerald-500"
@@ -758,7 +752,7 @@ export default function Dashboard() {
               <thead>
                 <tr className="bg-slate-950/80 text-slate-400 font-semibold border-b border-slate-850 uppercase tracking-wider">
                   <th className="py-3 px-4 w-10">
-                    <input 
+                    <input
                       type="checkbox"
                       checked={records.length > 0 && selectedIds.size === records.length}
                       onChange={handleToggleSelectAll}
@@ -777,14 +771,13 @@ export default function Dashboard() {
               </thead>
               <tbody className="divide-y divide-slate-850/80 bg-slate-900/10">
                 {records.map((rec) => (
-                  <tr 
-                    key={rec.id} 
-                    className={`hover:bg-slate-850/40 transition cursor-pointer ${
-                      selectedRecord?.id === rec.id ? 'bg-slate-850/30 border-l-2 border-emerald-500' : ''
-                    }`}
+                  <tr
+                    key={rec.id}
+                    className={`hover:bg-slate-850/40 transition cursor-pointer ${selectedRecord?.id === rec.id ? 'bg-slate-850/30 border-l-2 border-emerald-500' : ''
+                      }`}
                   >
                     <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
-                      <input 
+                      <input
                         type="checkbox"
                         checked={selectedIds.has(rec.id)}
                         onChange={() => handleToggleSelectRow(rec.id)}
@@ -795,11 +788,10 @@ export default function Dashboard() {
                       {rec.category}
                     </td>
                     <td className="py-3 px-4" onClick={() => handleOpenDrawer(rec)}>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        rec.scope === 'SCOPE_1' ? 'bg-cyan-500/10 text-cyan-400' :
-                        rec.scope === 'SCOPE_2' ? 'bg-yellow-500/10 text-yellow-400' :
-                        'bg-purple-500/10 text-purple-400'
-                      }`}>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${rec.scope === 'SCOPE_1' ? 'bg-cyan-500/10 text-cyan-400' :
+                          rec.scope === 'SCOPE_2' ? 'bg-yellow-500/10 text-yellow-400' :
+                            'bg-purple-500/10 text-purple-400'
+                        }`}>
                         {rec.scope}
                       </span>
                     </td>
@@ -817,13 +809,12 @@ export default function Dashboard() {
                     </td>
                     <td className="py-3 px-4" onClick={() => handleOpenDrawer(rec)}>
                       <div className="flex items-center gap-1.5">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          rec.review_status === 'APPROVED' 
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${rec.review_status === 'APPROVED'
                             ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                             : rec.review_status === 'FLAGGED'
-                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                            : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                        }`}>
+                              ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                              : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                          }`}>
                           {rec.review_status}
                         </span>
                         {rec.anomaly_flag_reason && (
@@ -832,7 +823,7 @@ export default function Dashboard() {
                       </div>
                     </td>
                     <td className="py-3 px-4 text-center" onClick={(e) => e.stopPropagation()}>
-                      <button 
+                      <button
                         onClick={() => handleOpenDrawer(rec)}
                         className="text-slate-500 hover:text-emerald-500 font-bold px-3 py-1.5 rounded-lg glass-input hover:bg-white transition"
                       >
@@ -860,7 +851,7 @@ export default function Dashboard() {
             </span>
 
             <div className="flex items-center gap-2">
-              <button 
+              <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1 || !hasPrevPage}
                 className="glass-input hover:bg-white border border-slate-850/80 px-3 py-1.5 rounded-lg disabled:opacity-40 transition flex items-center gap-1 font-semibold"
@@ -868,7 +859,7 @@ export default function Dashboard() {
                 <ChevronLeft className="h-3.5 w-3.5" />
                 Previous
               </button>
-              <button 
+              <button
                 onClick={() => setPage(p => p + 1)}
                 disabled={!hasNextPage}
                 className="glass-input hover:bg-white border border-slate-850/80 px-3 py-1.5 rounded-lg disabled:opacity-40 transition flex items-center gap-1 font-semibold"
@@ -886,15 +877,15 @@ export default function Dashboard() {
         <div className="fixed inset-0 z-50 overflow-hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
           <div className="absolute inset-0 overflow-hidden">
             {/* Backdrop */}
-            <div 
-              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity" 
+            <div
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity"
               onClick={() => setSelectedRecord(null)}
             />
 
             <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
               <div className="pointer-events-auto w-screen max-w-xl border-l border-slate-800/80 bg-slate-900/95 text-[#2E2A24] shadow-2xl backdrop-blur-xl">
                 <div className="flex h-full flex-col overflow-y-scroll p-6 space-y-6">
-                  
+
                   {/* Drawer Header */}
                   <div className="flex items-center justify-between border-b border-slate-850 pb-4">
                     <div>
@@ -903,7 +894,7 @@ export default function Dashboard() {
                       </span>
                       <h2 className="text-base font-bold text-slate-900 mt-1">Compliance Audit Inspector</h2>
                     </div>
-                    <button 
+                    <button
                       onClick={() => setSelectedRecord(null)}
                       className="rounded-lg p-1.5 hover:bg-slate-850/60 text-slate-500 hover:text-slate-800 transition"
                     >
@@ -915,24 +906,22 @@ export default function Dashboard() {
                   <div className="grid grid-cols-2 gap-4 bg-slate-900/10 p-4 rounded-xl border border-slate-850/80">
                     <div>
                       <p className="text-[10px] text-slate-500 uppercase tracking-wide font-bold">Review Status</p>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold mt-1 inline-block ${
-                        selectedRecord.review_status === 'APPROVED' 
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold mt-1 inline-block ${selectedRecord.review_status === 'APPROVED'
                           ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                           : selectedRecord.review_status === 'FLAGGED'
-                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse'
-                          : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                      }`}>
+                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse'
+                            : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                        }`}>
                         {selectedRecord.review_status}
                       </span>
                     </div>
 
                     <div>
                       <p className="text-[10px] text-slate-500 uppercase tracking-wide font-bold">Data Source Scope</p>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold mt-1 inline-block ${
-                        selectedRecord.scope === 'SCOPE_1' ? 'bg-cyan-500/10 text-cyan-400' :
-                        selectedRecord.scope === 'SCOPE_2' ? 'bg-yellow-500/10 text-yellow-400' :
-                        'bg-purple-500/10 text-purple-400'
-                      }`}>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold mt-1 inline-block ${selectedRecord.scope === 'SCOPE_1' ? 'bg-cyan-500/10 text-cyan-400' :
+                          selectedRecord.scope === 'SCOPE_2' ? 'bg-yellow-500/10 text-yellow-400' :
+                            'bg-purple-500/10 text-purple-400'
+                        }`}>
                         {selectedRecord.scope}
                       </span>
                     </div>
@@ -969,7 +958,7 @@ export default function Dashboard() {
                       <div className="flex items-center justify-between">
                         <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold">Activity Metrics</h3>
                         {selectedRecord.review_status !== 'APPROVED' && (
-                          <button 
+                          <button
                             onClick={() => setIsEditing(true)}
                             className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
                           >
@@ -1009,14 +998,14 @@ export default function Dashboard() {
                   ) : (
                     <form onSubmit={handleEditSubmit} className="space-y-4">
                       <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold">Modify Parameters</h3>
-                      
+
                       <div className="space-y-3 bg-slate-900/10 p-4 rounded-xl border border-slate-850/80 text-xs">
                         <div>
                           <label className="text-slate-500 block mb-1 font-semibold">Category</label>
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             value={editForm.category}
-                            onChange={(e) => setEditForm({...editForm, category: e.target.value})}
+                            onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
                             className="w-full glass-input rounded p-1.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-semibold"
                           />
                         </div>
@@ -1024,19 +1013,19 @@ export default function Dashboard() {
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="text-slate-500 block mb-1 font-semibold">Original Quantity</label>
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               value={editForm.original_quantity}
-                              onChange={(e) => setEditForm({...editForm, original_quantity: e.target.value})}
+                              onChange={(e) => setEditForm({ ...editForm, original_quantity: e.target.value })}
                               className="w-full glass-input rounded p-1.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-mono"
                             />
                           </div>
                           <div>
                             <label className="text-slate-500 block mb-1 font-semibold">Original Unit</label>
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               value={editForm.original_unit}
-                              onChange={(e) => setEditForm({...editForm, original_unit: e.target.value})}
+                              onChange={(e) => setEditForm({ ...editForm, original_unit: e.target.value })}
                               className="w-full glass-input rounded p-1.5 text-slate-800 focus:outline-none focus:border-emerald-500"
                             />
                           </div>
@@ -1044,34 +1033,34 @@ export default function Dashboard() {
 
                         <div>
                           <label className="text-slate-500 block mb-1 font-semibold">Plant / Facility Code</label>
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             value={editForm.plant_facility_code}
-                            onChange={(e) => setEditForm({...editForm, plant_facility_code: e.target.value})}
+                            onChange={(e) => setEditForm({ ...editForm, plant_facility_code: e.target.value })}
                             className="w-full glass-input rounded p-1.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-mono"
                           />
                         </div>
 
                         <div>
                           <label className="text-slate-500 block mb-1 font-semibold">Transaction Date</label>
-                          <input 
-                            type="date" 
+                          <input
+                            type="date"
                             value={editForm.transaction_date}
-                            onChange={(e) => setEditForm({...editForm, transaction_date: e.target.value})}
+                            onChange={(e) => setEditForm({ ...editForm, transaction_date: e.target.value })}
                             className="w-full glass-input rounded p-1.5 text-slate-800 focus:outline-none focus:border-emerald-500 font-mono"
                           />
                         </div>
                       </div>
 
                       <div className="flex gap-2">
-                        <button 
-                          type="submit" 
+                        <button
+                          type="submit"
                           className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 px-3 rounded text-xs transition"
                         >
                           Save Changes
                         </button>
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={() => setIsEditing(false)}
                           className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-1.5 px-3 rounded text-xs transition border border-slate-700"
                         >
@@ -1098,7 +1087,7 @@ export default function Dashboard() {
                   {/* AUDITOR WORKFLOW BUTTONS */}
                   {selectedRecord.review_status !== 'APPROVED' && (
                     <div className="border-t border-slate-850 pt-4 flex gap-3">
-                      <button 
+                      <button
                         onClick={() => handleReviewAction(selectedRecord.id, 'APPROVED')}
                         className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-4 rounded-lg text-xs transition flex items-center justify-center gap-1"
                       >
@@ -1106,7 +1095,7 @@ export default function Dashboard() {
                         Approve and Sign-off
                       </button>
 
-                      <button 
+                      <button
                         onClick={() => {
                           const reason = prompt("Enter anomaly description to flag this record:", selectedRecord.anomaly_flag_reason || "");
                           if (reason !== null) {
