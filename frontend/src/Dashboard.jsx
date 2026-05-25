@@ -209,11 +209,13 @@ export default function Dashboard() {
   // Run initial queries
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, filters, isMockMode]);
 
   useEffect(() => {
     fetchJobs();
-  }, [fetchJobs]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMockMode]);
 
   // --- UPLOAD HANDLER ---
   const handleUpload = async (e) => {
