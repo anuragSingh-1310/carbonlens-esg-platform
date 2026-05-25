@@ -74,6 +74,14 @@ export default function Dashboard() {
     anomaly_flag_reason: ''
   });
 
+  // --- SMART OCR DOCUMENT INGESTION STATE ---
+  const [activeTab, setActiveTab] = useState('smart');
+  const [isOcrProcessing, setIsOcrProcessing] = useState(false);
+  const [ocrStage, setOcrStage] = useState('');
+  const [activeExtraction, setActiveExtraction] = useState(null);
+  const [ocrError, setOcrError] = useState(null);
+  const [dragOver, setDragOver] = useState(false);
+
   // Mock Mode state - Activates if connection to real Django REST APIs fails
   const [isMockMode, setIsMockMode] = useState(false);
 
@@ -265,6 +273,203 @@ export default function Dashboard() {
       setUploadProgress("");
       setIsUploading(false);
       alert(`Upload failed: ${err.response?.data?.file || err.message}`);
+    }
+  };
+
+  // --- SMART OCR DOCUMENT UPLOAD & PARSING HANDLERS ---
+  const handleDocumentUpload = async (file) => {
+    if (!file) return;
+
+    setIsOcrProcessing(true);
+    setOcrError(null);
+    setActiveExtraction(null);
+
+    const stages = [
+      "Scanning document structure...",
+      "Performing OCR & text extraction...",
+      "Classifying emission scope...",
+      "Parsing carbon entities...",
+      "Verifying database duplicates...",
+      "Draft record created in ledger!"
+    ];
+
+    let stageIdx = 0;
+    setOcrStage(stages[0]);
+    const stageInterval = setInterval(() => {
+      stageIdx++;
+      if (stageIdx < stages.length - 1) {
+        setOcrStage(stages[stageIdx]);
+      }
+    }, 450);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      if (isMockMode) {
+        await new Promise(resolve => setTimeout(resolve, 2200));
+        clearInterval(stageInterval);
+        setOcrStage(stages[5]);
+
+        const filenameLower = file.name.toLowerCase();
+        let simulated = {
+          record_id: 999 + Math.floor(Math.random() * 100),
+          category: "STATIONARY_FUEL",
+          original_quantity: 850.00,
+          original_unit: "LITERS",
+          normalized_quantity: 850.00,
+          normalized_unit: "LITERS",
+          transaction_date: new Date().toISOString().split('T')[0],
+          plant_facility_code: "PLANT_B",
+          vendor: "Shell Fuel Ltd.",
+          invoice_amount: 1245.50,
+          confidence_level: 0.94,
+          scope_detected: "SCOPE_1",
+          document_type: "fuel_invoice",
+          warnings: []
+        };
+
+        if (filenameLower.includes("elect") || filenameLower.includes("utility") || filenameLower.includes("kwh") || filenameLower.includes("bill")) {
+          simulated = {
+            record_id: 999 + Math.floor(Math.random() * 100),
+            category: "PURCHASED_ELECTRICITY",
+            original_quantity: 14500.00,
+            original_unit: "kWh",
+            normalized_quantity: 14500.00,
+            normalized_unit: "kWh",
+            transaction_date: new Date().toISOString().split('T')[0],
+            plant_facility_code: "ACCT-88904",
+            vendor: "Electric Co.",
+            invoice_amount: 2150.00,
+            confidence_level: 0.97,
+            scope_detected: "SCOPE_2",
+            document_type: "electricity_bill",
+            warnings: []
+          };
+        } else if (filenameLower.includes("travel") || filenameLower.includes("flight") || filenameLower.includes("receipt") || filenameLower.includes("air")) {
+          simulated = {
+            record_id: 999 + Math.floor(Math.random() * 100),
+            category: "BUSINESS_TRAVEL",
+            original_quantity: 1140.00,
+            original_unit: "km",
+            normalized_quantity: 1710.00,
+            normalized_unit: "km-CO2e-factor",
+            transaction_date: new Date().toISOString().split('T')[0],
+            plant_facility_code: "HQ_TRAVEL",
+            vendor: "British Airways",
+            invoice_amount: 850.00,
+            confidence_level: 0.91,
+            scope_detected: "SCOPE_3",
+            document_type: "travel_receipt",
+            warnings: ["Airport route connection estimated automatically."]
+          };
+        }
+
+        setTimeout(() => {
+          setActiveExtraction(simulated);
+          setIsOcrProcessing(false);
+        }, 300);
+      } else {
+        const response = await axios.post(`${API_BASE}/upload-document/`, formData, {
+          headers: {
+            ...AXIOS_CONFIG.headers,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        clearInterval(stageInterval);
+        setOcrStage(stages[5]);
+        
+        const resData = response.data;
+        const mapped = {
+          record_id: resData.extracted_data.record_id,
+          category: resData.extracted_data.category,
+          original_quantity: resData.extracted_data.original_quantity,
+          original_unit: resData.extracted_data.original_unit,
+          normalized_quantity: resData.extracted_data.normalized_quantity,
+          normalized_unit: resData.extracted_data.normalized_unit,
+          transaction_date: resData.extracted_data.transaction_date,
+          plant_facility_code: resData.extracted_data.plant_facility_code,
+          vendor: resData.extracted_data.vendor,
+          invoice_amount: resData.extracted_data.invoice_amount,
+          confidence_level: resData.extracted_data.confidence_level,
+          scope_detected: resData.scope_detected,
+          document_type: resData.document_type,
+          warnings: resData.warnings || []
+        };
+        
+        setTimeout(() => {
+          setActiveExtraction(mapped);
+          setIsOcrProcessing(false);
+          fetchData();
+          fetchJobs();
+        }, 300);
+      }
+    } catch (err) {
+      clearInterval(stageInterval);
+      setIsOcrProcessing(false);
+      const errMsg = err.response?.data?.error || err.message;
+      setOcrError(typeof errMsg === 'object' ? JSON.stringify(errMsg) : errMsg);
+      console.error("OCR upload error:", err);
+    }
+  };
+
+  const handleApproveExtraction = async (e) => {
+    e.preventDefault();
+    if (!activeExtraction) return;
+
+    try {
+      if (isMockMode) {
+        const newRecord = {
+          id: activeExtraction.record_id,
+          scope: activeExtraction.scope_detected,
+          category: activeExtraction.category,
+          original_quantity: String(activeExtraction.original_quantity),
+          original_unit: activeExtraction.original_unit,
+          normalized_quantity: String(activeExtraction.normalized_quantity),
+          normalized_unit: activeExtraction.normalized_unit,
+          transaction_date: activeExtraction.transaction_date,
+          plant_facility_code: activeExtraction.plant_facility_code,
+          review_status: 'APPROVED',
+          approved_by_email: 'compliance.auditor@carbonlens.com',
+          approved_at: new Date().toISOString(),
+          anomaly_flag_reason: null,
+          raw_row: {
+            id: 900 + Math.floor(Math.random() * 100),
+            row_index: 1,
+            payload: { ocr_vendor: activeExtraction.vendor, ocr_amount: activeExtraction.invoice_amount }
+          }
+        };
+
+        setRecords(prev => [newRecord, ...prev]);
+        setMetrics(prev => ({
+          ...prev,
+          total_records: prev.total_records + 1,
+          approved_count: prev.approved_count + 1,
+          scope_distribution: {
+            ...prev.scope_distribution,
+            [activeExtraction.scope_detected]: (prev.scope_distribution[activeExtraction.scope_detected] || 0) + Number(activeExtraction.normalized_quantity)
+          }
+        }));
+
+        setActiveExtraction(null);
+        alert("Smart document record approved and registered successfully!");
+      } else {
+        await axios.patch(`${API_BASE}/records/${activeExtraction.record_id}/review/`, {
+          category: activeExtraction.category,
+          original_quantity: activeExtraction.original_quantity,
+          original_unit: activeExtraction.original_unit,
+          transaction_date: activeExtraction.transaction_date,
+          plant_facility_code: activeExtraction.plant_facility_code,
+          review_status: 'APPROVED'
+        }, AXIOS_CONFIG);
+
+        setActiveExtraction(null);
+        fetchData();
+        fetchJobs();
+        alert("Smart document successfully audited and approved!");
+      }
+    } catch (err) {
+      alert(`Approve failed: ${err.response?.data?.[0] || err.message}`);
     }
   };
 
@@ -581,60 +786,321 @@ export default function Dashboard() {
         {/* ROW 2: SPLIT INGESTION AND JOB HISTORY */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* File Upload card */}
-          <div className="glass-card glow-teal p-5 space-y-4">
-            <div>
-              <h3 className="font-bold text-sm text-slate-200">ESG Ingestion Portal</h3>
-              <p className="text-xs text-slate-400">Import CSV or JSON exports directly into the multi-tenant engine.</p>
-            </div>
-
-            <form onSubmit={handleUpload} className="space-y-4">
-              <div>
-                <label className="text-xs text-slate-400 block mb-1.5 font-semibold">Ingestion Source Type</label>
-                <select
-                  value={uploadSource}
-                  onChange={(e) => setUploadSource(e.target.value)}
-                  className="w-full glass-input text-slate-100 border border-slate-800/80 text-sm p-2.5 rounded-lg focus:outline-none focus:border-emerald-500"
-                >
-                  <option value="SAP_PROCUREMENT">SAP Procurement / Fuel CSV</option>
-                  <option value="UTILITY_ELECTRICITY">Utility Electricity CSV</option>
-                  <option value="TRAVEL_API">Corporate Travel JSON Payload</option>
-                </select>
-              </div>
-
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="border border-dashed border-slate-800 hover:border-emerald-400/85 rounded-xl py-6 flex flex-col items-center justify-center cursor-pointer transition bg-slate-950/30 hover:bg-slate-950/50 group"
-              >
-                <UploadCloud className="h-8 w-8 text-slate-500 group-hover:text-emerald-400 mb-2 transition" />
-                <span className="text-xs text-slate-300 font-medium">Click to select files</span>
-                <span className="text-[10px] text-slate-500 mt-1">Supports CSV, JSON</span>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                      setUploadProgress(`Selected: ${e.target.files[0].name}`);
-                    }
-                  }}
-                  className="hidden"
-                />
-              </div>
-
-              {uploadProgress && (
-                <div className="p-2.5 rounded-lg bg-slate-950 text-xs flex items-center gap-2 border border-slate-800 text-emerald-400 font-mono">
-                  <CornerDownRight className="h-3 w-3" />
-                  {uploadProgress}
+          <div className="glass-card glow-teal p-5 space-y-4 flex flex-col justify-between">
+            {/* Conditional Render: Active extraction editor takes over card to ensure focused auditing workflow */}
+            {activeExtraction ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-850 pb-2">
+                  <div>
+                    <h3 className="font-extrabold text-sm text-slate-100 flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                      Smart Verification
+                    </h3>
+                    <p className="text-[10px] text-slate-400">Review & verify AI-extracted metrics before final ingestion.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveExtraction(null)}
+                    className="text-slate-400 hover:text-white p-1 hover:bg-slate-850 rounded-lg transition"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
-              )}
 
-              <button
-                type="submit"
-                disabled={isUploading}
-                className="w-full bg-[#073642] hover:bg-[#0c4452] text-[#FAF5EB] font-bold py-3 rounded-xl text-sm transition flex items-center justify-center gap-1.5 shadow-[0_4px_12px_rgba(7,54,66,0.15)] hover:shadow-[0_6px_20px_rgba(7,54,66,0.25)] hover:translate-y-[-1px] disabled:opacity-50"
-              >
-                {isUploading ? 'Executing Ingestion Services...' : 'Process Ingestion Job'}
-              </button>
-            </form>
+                {/* Extraction confidence badge & bar */}
+                <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-850 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <p className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Extraction Confidence</p>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-base font-extrabold ${
+                        activeExtraction.confidence_level > 0.85 ? 'text-emerald-400' :
+                        activeExtraction.confidence_level > 0.70 ? 'text-amber-400' : 'text-red-400'
+                      }`}>
+                        {Math.round(activeExtraction.confidence_level * 100)}%
+                      </span>
+                      <span className="text-[9px] text-slate-400 font-medium">
+                        ({activeExtraction.confidence_level > 0.85 ? 'High Precision' : 'Requires Review'})
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-9 w-9 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                    <CheckCircle className="h-5 w-5" />
+                  </div>
+                </div>
+
+                {/* Warnings / Low quality alarms */}
+                {activeExtraction.warnings && activeExtraction.warnings.length > 0 && (
+                  <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 text-[10px] text-amber-400 space-y-1">
+                    <div className="flex items-center gap-1 font-bold">
+                      <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
+                      <span>Extraction Warnings</span>
+                    </div>
+                    <ul className="list-disc pl-4 space-y-0.5 text-[9px] text-amber-300/80 font-mono leading-relaxed">
+                      {activeExtraction.warnings.map((w, i) => <li key={i}>{w}</li>)}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Dynamic verification form */}
+                <form onSubmit={handleApproveExtraction} className="space-y-3.5 text-xs">
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="text-[9px] text-slate-400 block mb-1 font-bold uppercase tracking-wider">Vendor/Supplier</label>
+                      <input
+                        type="text"
+                        value={activeExtraction.vendor}
+                        onChange={(e) => setActiveExtraction({ ...activeExtraction, vendor: e.target.value })}
+                        className="w-full glass-input text-slate-200 border border-slate-800 text-[11px] p-2 rounded-lg focus:outline-none focus:border-emerald-500 font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-slate-400 block mb-1 font-bold uppercase tracking-wider">Plant / Facility</label>
+                      <input
+                        type="text"
+                        value={activeExtraction.plant_facility_code}
+                        onChange={(e) => setActiveExtraction({ ...activeExtraction, plant_facility_code: e.target.value })}
+                        className="w-full glass-input text-slate-200 border border-slate-800 text-[11px] p-2 rounded-lg focus:outline-none focus:border-emerald-500 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-slate-400 block mb-1 font-bold uppercase tracking-wider">Quantity</label>
+                      <input
+                        type="text"
+                        value={activeExtraction.original_quantity}
+                        onChange={(e) => setActiveExtraction({ ...activeExtraction, original_quantity: e.target.value, normalized_quantity: e.target.value })}
+                        className="w-full glass-input text-slate-200 border border-slate-800 text-[11px] p-2 rounded-lg focus:outline-none focus:border-emerald-500 font-mono font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-slate-400 block mb-1 font-bold uppercase tracking-wider">Original Unit</label>
+                      <input
+                        type="text"
+                        value={activeExtraction.original_unit}
+                        onChange={(e) => setActiveExtraction({ ...activeExtraction, original_unit: e.target.value })}
+                        className="w-full glass-input text-slate-200 border border-slate-800 text-[11px] p-2 rounded-lg focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-slate-400 block mb-1 font-bold uppercase tracking-wider">Invoice Date</label>
+                      <input
+                        type="date"
+                        value={activeExtraction.transaction_date}
+                        onChange={(e) => setActiveExtraction({ ...activeExtraction, transaction_date: e.target.value })}
+                        className="w-full glass-input text-slate-200 border border-slate-800 text-[11px] p-2 rounded-lg focus:outline-none focus:border-emerald-500 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-slate-400 block mb-1 font-bold uppercase tracking-wider">Invoice Amount ($)</label>
+                      <input
+                        type="text"
+                        value={activeExtraction.invoice_amount}
+                        onChange={(e) => setActiveExtraction({ ...activeExtraction, invoice_amount: e.target.value })}
+                        className="w-full glass-input text-slate-200 border border-slate-800 text-[11px] p-2 rounded-lg focus:outline-none focus:border-emerald-500 font-mono font-semibold"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[9px] text-slate-400 block mb-1 font-bold uppercase tracking-wider">ESG Activity Type / Scope</label>
+                    <select
+                      value={activeExtraction.category}
+                      onChange={(e) => {
+                        const cat = e.target.value;
+                        let scope = "SCOPE_3";
+                        if (cat === "STATIONARY_FUEL") scope = "SCOPE_1";
+                        if (cat === "PURCHASED_ELECTRICITY") scope = "SCOPE_2";
+                        setActiveExtraction({ ...activeExtraction, category: cat, scope_detected: scope });
+                      }}
+                      className="w-full glass-input text-slate-200 border border-slate-800 text-[11px] p-2 rounded-lg focus:outline-none focus:border-emerald-500 font-semibold"
+                    >
+                      <option value="PURCHASED_ELECTRICITY">Scope 2 - Purchased Electricity</option>
+                      <option value="STATIONARY_FUEL">Scope 1 - Stationary Combustion</option>
+                      <option value="BUSINESS_TRAVEL">Scope 3 - Business Travel</option>
+                      <option value="SUPPLIER_TRANSPORT">Scope 3 - Supplier Transportation</option>
+                      <option value="PURCHASED_GOODS">Scope 3 - Purchased Goods</option>
+                    </select>
+                  </div>
+
+                  <div className="flex gap-2.5 pt-3 border-t border-slate-850">
+                    <button
+                      type="submit"
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-[0_4px_12px_rgba(16,185,129,0.15)] hover:translate-y-[-1px]"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Approve & Ingest
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveExtraction(null);
+                        fetchData();
+                        fetchJobs();
+                        alert("Draft ingestion record saved as PENDING in the ledger.");
+                      }}
+                      className="flex-1 bg-slate-850 hover:bg-slate-800 text-slate-300 font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5 border border-slate-880 hover:text-slate-100"
+                    >
+                      Keep as Draft
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              // Standard Upload View with tab switcher
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-bold text-sm text-slate-200">ESG Ingestion Portal</h3>
+                  <p className="text-xs text-slate-400">Import business files into the multi-tenant engine.</p>
+                </div>
+
+                {/* Tab Switcher */}
+                <div className="flex border-b border-slate-800 pb-1 mb-1">
+                  <button
+                    type="button"
+                    onClick={() => { setActiveTab('smart'); setOcrError(null); }}
+                    className={`flex-1 text-[11px] font-bold py-2 px-1 rounded-t-lg transition flex items-center justify-center gap-1.5 ${
+                      activeTab === 'smart' 
+                        ? 'text-emerald-400 border-b-2 border-emerald-500 bg-emerald-500/5'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <Database className="h-3.5 w-3.5" />
+                    Smart OCR Invoice
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setActiveTab('csv'); }}
+                    className={`flex-1 text-[11px] font-bold py-2 px-1 rounded-t-lg transition flex items-center justify-center gap-1.5 ${
+                      activeTab === 'csv' 
+                        ? 'text-emerald-400 border-b-2 border-emerald-500 bg-emerald-500/5'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <UploadCloud className="h-3.5 w-3.5" />
+                    CSV / JSON Batch
+                  </button>
+                </div>
+
+                {activeTab === 'smart' ? (
+                  /* SMART OCR INGESTION FORM */
+                  <div className="space-y-4">
+                    {isOcrProcessing ? (
+                      <div className="p-6 rounded-xl bg-slate-950/60 border border-slate-850 flex flex-col items-center justify-center gap-3 text-center min-h-[160px] animate-pulse">
+                        <div className="relative flex items-center justify-center">
+                          <div className="h-10 w-10 rounded-full border-2 border-slate-800 border-t-emerald-400 animate-spin" />
+                          <Database className="h-4.5 w-4.5 text-emerald-400 absolute" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs text-emerald-400 font-mono font-bold uppercase tracking-wider">{ocrStage}</p>
+                          <p className="text-[10px] text-slate-500">Extracting ESG targets using character vision pipeline</p>
+                        </div>
+                      </div>
+                    ) : ocrError ? (
+                      <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/20 text-xs text-red-400 space-y-3 min-h-[160px] flex flex-col justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1.5 font-bold">
+                            <AlertTriangle className="h-4.5 w-4.5 text-red-400" />
+                            <span>OCR Pipeline Failure</span>
+                          </div>
+                          <p className="font-mono text-[9px] bg-red-500/10 p-2 rounded leading-relaxed overflow-y-auto max-h-[80px] break-all">{ocrError}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setOcrError(null)}
+                          className="w-full text-center py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 transition font-bold text-[10px]"
+                        >
+                          Clear & Retry Upload
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                        onDragLeave={() => setDragOver(false)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setDragOver(false);
+                          const file = e.dataTransfer?.files?.[0];
+                          if (file) handleDocumentUpload(file);
+                        }}
+                        onClick={() => {
+                          const fileInput = document.getElementById('ocr-file-input');
+                          fileInput?.click();
+                        }}
+                        className={`border border-dashed rounded-xl py-9 flex flex-col items-center justify-center cursor-pointer transition ${
+                          dragOver 
+                            ? 'border-emerald-400 bg-emerald-950/20 text-emerald-400 scale-[1.01]' 
+                            : 'border-slate-800 hover:border-emerald-500/80 bg-slate-950/30 hover:bg-slate-950/50'
+                        } group relative overflow-hidden`}
+                      >
+                        <UploadCloud className={`h-10 w-10 mb-2 transition ${dragOver ? 'text-emerald-400 animate-bounce' : 'text-slate-500 group-hover:text-emerald-400'}`} />
+                        <span className="text-xs text-slate-300 font-bold">Drag & Drop Invoice / Bill</span>
+                        <span className="text-[10px] text-slate-500 mt-1">Supports PDF, PNG, JPG, JPEG</span>
+                        <span className="text-[8px] uppercase tracking-widest text-emerald-500/70 font-mono mt-1.5 font-bold">OCR-Powered Vision Pipeline</span>
+                        <input
+                          id="ocr-file-input"
+                          type="file"
+                          accept=".pdf,.png,.jpg,.jpeg"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleDocumentUpload(file);
+                          }}
+                          className="hidden"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* LEGACY CSV / JSON BATCH FORM */
+                  <form onSubmit={handleUpload} className="space-y-4">
+                    <div>
+                      <label className="text-[10px] text-slate-400 block mb-1 font-bold uppercase tracking-wider">Ingestion Source Type</label>
+                      <select
+                        value={uploadSource}
+                        onChange={(e) => setUploadSource(e.target.value)}
+                        className="w-full glass-input text-slate-100 border border-slate-800/80 text-xs p-2.5 rounded-lg focus:outline-none focus:border-emerald-500 font-semibold"
+                      >
+                        <option value="SAP_PROCUREMENT">SAP Procurement / Fuel CSV</option>
+                        <option value="UTILITY_ELECTRICITY">Utility Electricity CSV</option>
+                        <option value="TRAVEL_API">Corporate Travel JSON Payload</option>
+                      </select>
+                    </div>
+
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border border-dashed border-slate-800 hover:border-emerald-400/85 rounded-xl py-6 flex flex-col items-center justify-center cursor-pointer transition bg-slate-950/30 hover:bg-slate-950/50 group"
+                    >
+                      <UploadCloud className="h-8 w-8 text-slate-500 group-hover:text-emerald-400 mb-2 transition" />
+                      <span className="text-xs text-slate-300 font-medium">Click to select files</span>
+                      <span className="text-[10px] text-slate-500 mt-1">Supports CSV, JSON</span>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={(e) => {
+                          if (e.target.files?.[0]) {
+                            setUploadProgress(`Selected: ${e.target.files[0].name}`);
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </div>
+
+                    {uploadProgress && (
+                      <div className="p-2.5 rounded-lg bg-slate-950 text-[10px] flex items-center gap-2 border border-slate-800 text-emerald-400 font-mono">
+                        <CornerDownRight className="h-3 w-3" />
+                        {uploadProgress}
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={isUploading}
+                      className="w-full bg-[#073642] hover:bg-[#0c4452] text-[#FAF5EB] font-bold py-3 rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-[0_4px_12px_rgba(7,54,66,0.15)] hover:shadow-[0_6px_20px_rgba(7,54,66,0.25)] hover:translate-y-[-1px] disabled:opacity-50"
+                    >
+                      {isUploading ? 'Executing Ingestion Services...' : 'Process Ingestion Job'}
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Job Ingestion History Card */}

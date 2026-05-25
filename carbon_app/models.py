@@ -60,6 +60,7 @@ class RawIngestionJob(TenantModel):
         SAP_PROCUREMENT = "SAP_PROCUREMENT", "SAP Procurement/Fuel CSV Export"
         UTILITY_ELECTRICITY = "UTILITY_ELECTRICITY", "Utility Electricity CSV Export"
         TRAVEL_API = "TRAVEL_API", "Corporate Travel JSON/API"
+        DOCUMENT_OCR = "DOCUMENT_OCR", "Universal AI/OCR Document Ingestion"
 
     class JobStatus(models.TextChoices):
         PENDING = "PENDING", "Pending Processing"

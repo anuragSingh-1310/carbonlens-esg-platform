@@ -82,3 +82,10 @@ class EmissionActivityRecordSerializer(serializers.ModelSerializer):
                 "This record has already been approved and audited. Approved records are strictly immutable."
             )
         return attrs
+
+
+class DocumentUploadSerializer(serializers.Serializer):
+    """
+    Form serializer representing the API schema for universal OCR document uploads.
+    """
+    file = serializers.FileField(help_text="PDF, PNG, JPG, or JPEG invoice/receipt document")

@@ -5,7 +5,7 @@ from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from django.db import transaction
 from django.core.exceptions import ValidationError
-from .models import (
+from ..models import (
     RawIngestionJob,
     RawDataRow,
     EmissionActivityRecord,

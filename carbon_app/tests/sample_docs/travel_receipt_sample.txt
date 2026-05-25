@@ -1,0 +1,31 @@
+BRITISH AIRWAYS CORPORATE BOOKING
+=========================================
+PASSENGER FLIGHT RECEIPT & BOARDING INFO
+-----------------------------------------
+Supplier: British Airways PLC
+Booking Reference: BKG-99421
+Transaction Date: 2026-05-12
+Booking Division: HQ_TRAVEL
+
+PASSENGER PROFILE:
+-----------------------------------------
+Employee Email: lead.analyst@carbonlens.com
+Frequent Flyer No: BA-88210452
+
+FLIGHT ROUTING:
+-----------------------------------------
+Origin Airport Code: DEL (Indira Gandhi Int'l, Delhi)
+Destination Airport Code: LHR (Heathrow, London)
+Routing Distance: 6,710.00 km
+Cabin Class: BUSINESS CLASS (Factor: 1.5x)
+
+PAYMENT LEDGER:
+-----------------------------------------
+Base Airfare: $3,450.00
+Carrier-Imposed Surcharges: $250.00
+Taxes & Fees: $180.00
+Total Amount Charged: $3,880.00
+
+Payment Mode: Corporate Amex ending in 4421.
+=========================================
+Scope 3 carbon credits applied. Have a pleasant flight!

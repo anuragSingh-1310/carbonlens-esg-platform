@@ -1,0 +1,27 @@
+SHELL FUEL DISTRIBUTORS LTD.
+=========================================
+COMMERCIAL DELIVERY RECEIPT & INVOICE
+-----------------------------------------
+Vendor: Shell Fuel Distributors Ltd.
+Receipt No: REC-009941
+Invoice Date: 2026-05-18
+Facility Code: WERKS_4052
+
+DELIVERY LINE ITEMS:
+-----------------------------------------
+Item: High Speed Standby Generator Diesel
+Material Code: STATIONARY_FUEL - HSD
+Quantity Delivered: 2,500.00 liters
+Unit Price: $1.45 / liter
+
+TOTAL TRANSACTION SUMMARY:
+-----------------------------------------
+Subtotal Amount: $3,625.00
+Delivery & Logistic Freight Charges: $125.00
+VAT (18%): $652.50
+Total Invoice Amount: $4,402.50
+
+Delivered by tanker vehicle #KA-03-H-8821.
+Received in good condition by Generator Ops.
+=========================================
+For environmental audits, carbon factor is 2.68 kg CO2e per liter.

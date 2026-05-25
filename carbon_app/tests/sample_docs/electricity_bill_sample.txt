@@ -1,0 +1,27 @@
+TATA POWER GRID CORP.
+=========================================
+INVOICE DETAILS:
+-----------------------------------------
+Vendor Name: Tata Power Grid Corp.
+Invoice Number: INV-9988210
+Invoice Date: 2026-05-15
+Meter Account Number: ACCT-88214
+
+BILLING PERIOD: 2026-04-01 to 2026-04-30
+
+CONSUMPTION SUMMARY:
+-----------------------------------------
+Active Energy Metered: 42,500.00 kWh
+Power Factor: 0.98
+Multiplier: 1.0
+
+FINANCIAL CHARGES:
+-----------------------------------------
+Energy Consumption Charge: $4,250.00
+Grid Maintenance Fee: $150.00
+Taxes & Regulatory Duties: $350.00
+Total Amount Due: $4,750.00
+
+Please pay by 2026-06-15 to avoid grid disconnection.
+=========================================
+Thank you for participating in our Green Energy Grid!

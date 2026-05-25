@@ -3,7 +3,8 @@ from .views import (
     IngestionJobAPIView,
     DashboardMetricsAPIView,
     ActivityRecordListAPIView,
-    ActivityRecordReviewAPIView
+    ActivityRecordReviewAPIView,
+    DocumentUploadAPIView
 )
 
 app_name = 'carbonlens_api'
@@ -11,6 +12,9 @@ app_name = 'carbonlens_api'
 urlpatterns = [
     # Ingestion Job upload & historical monitoring
     path('ingestion/', IngestionJobAPIView.as_view(), name='ingestion_jobs'),
+    
+    # AI/OCR universal document ingestion
+    path('upload-document/', DocumentUploadAPIView.as_view(), name='upload_document'),
     
     # Aggregated dashboard metrics
     path('dashboard/metrics/', DashboardMetricsAPIView.as_view(), name='dashboard_metrics'),

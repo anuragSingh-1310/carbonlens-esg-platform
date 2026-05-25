@@ -11,7 +11,21 @@ from .models import RawIngestionJob, EmissionActivityRecord
 from .serializers import (
     RawIngestionJobSerializer, 
     EmissionActivityRecordSerializer, 
-    IngestionUploadSerializer
+    IngestionUploadSerializer,
+    DocumentUploadSerializer
+)
+
+import logging
+logger = logging.getLogger(__name__)
+
+from .services import (
+    validate_uploaded_file,
+    extract_document_text,
+    classify_document,
+    extract_entities,
+    check_for_duplicates,
+    assess_ocr_readability,
+    create_esg_records
 )
 
 from rest_framework.response import Response
@@ -109,6 +123,112 @@ class IngestionJobAPIView(APIView):
         
         response_serializer = RawIngestionJobSerializer(job)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+
+class DocumentUploadAPIView(APIView):
+    """
+    POST: Uploads a document (PDF/PNG/JPG/JPEG), runs OCR + image preprocessing,
+          classifies the scope/category, extracts key metrics via regex,
+          checks for duplicates and low readability, and creates standard ESG records.
+    """
+    permission_classes = []
+
+    def post(self, request, *args, **kwargs):
+        from .models import Organization
+        org, _ = Organization.objects.get_or_create(
+            name="Demo Organization",
+            slug="demo-org"
+        )
+        
+        serializer = DocumentUploadSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "error": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        uploaded_file = serializer.validated_data['file']
+        filename = uploaded_file.name
+        
+        try:
+            # 1. File Type & Extension checks
+            validate_uploaded_file(uploaded_file, filename)
+            
+            # 2. Extract Text via OCR / pdfplumber
+            raw_text = extract_document_text(uploaded_file, filename)
+            
+            # 3. Classify Document Type & ESG Scope
+            doc_type, scope, category, confidence = classify_document(raw_text)
+            
+            # 4. Extract Structured Entities via Regex
+            parsed_data = extract_entities(raw_text)
+            
+            # 5. Readability / Noise assessment
+            is_readable, ocr_warnings = assess_ocr_readability(raw_text)
+            
+            # 6. Duplicate detection check
+            is_duplicate, existing_id = check_for_duplicates(
+                org,
+                parsed_data["quantity"],
+                parsed_data["unit"],
+                parsed_data["invoice_date"],
+                parsed_data["facility"]
+            )
+            
+            warnings = ocr_warnings.copy()
+            if is_duplicate:
+                warnings.append(f"Potential duplicate invoice detected. An identical record already exists with ID {existing_id}.")
+            
+            # 7. Create all relevant multi-tenant database records
+            uploaded_by_user = request.user if request.user and request.user.is_authenticated else None
+            activity_record = create_esg_records(
+                organization=org,
+                user=uploaded_by_user,
+                filename=filename,
+                file_size=uploaded_file.size,
+                doc_type=doc_type,
+                scope=scope,
+                category=category,
+                parsed_data=parsed_data,
+                raw_text=raw_text
+            )
+            
+            # Formulate structured successful JSON response
+            return Response({
+                "success": True,
+                "document_type": doc_type,
+                "scope_detected": scope,
+                "extracted_data": {
+                    "record_id": activity_record.id,
+                    "category": activity_record.category,
+                    "original_quantity": float(activity_record.original_quantity),
+                    "original_unit": activity_record.original_unit,
+                    "normalized_quantity": float(activity_record.normalized_quantity),
+                    "normalized_unit": activity_record.normalized_unit,
+                    "transaction_date": str(activity_record.transaction_date),
+                    "plant_facility_code": activity_record.plant_facility_code,
+                    "vendor": parsed_data["vendor"],
+                    "invoice_amount": float(parsed_data["invoice_amount"]),
+                    "confidence_level": confidence
+                },
+                "warnings": warnings,
+                "record_created": True
+            }, status=status.HTTP_201_CREATED)
+            
+        except RuntimeError as re_err:
+            logger.error(f"Runtime configuration error: {str(re_err)}")
+            return Response({
+                "success": False,
+                "error": str(re_err),
+                "technical_details": "Tesseract binary missing. System OCR is temporarily offline."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        except Exception as e:
+            logger.error(f"Universal document ingestion failed: {str(e)}", exc_info=True)
+            return Response({
+                "success": False,
+                "error": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 
 # ==========================================
