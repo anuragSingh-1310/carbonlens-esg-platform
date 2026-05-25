@@ -16,6 +16,16 @@ Users can upload:
 
 ---
 
+## Smart AI/OCR Document Ingestion [New]
+Users can upload utility bills, fuel invoices, travel receipts, logistics bills, and invoice images (PDF, PNG, JPG, JPEG). The system:
+- Performs OCR text extraction and image cleaning automatically.
+- Classifies bills into Scope 1, Scope 2, and Scope 3 emission scopes.
+- Parses key data like quantity, unit, invoice date, supplier name, facility, and amount.
+- Displays a live "Smart Verification" preview card to review, edit, and approve data before committing.
+- Automatically flags duplicates and readability warnings.
+
+---
+
 ## Automatic ESG Classification
 The backend automatically:
 - Classifies emissions into Scope 1, Scope 2, and Scope 3
@@ -64,6 +74,8 @@ The dashboard provides:
 ## Backend
 - Django
 - Django REST Framework
+- pdfplumber (for PDF text vectors)
+- pytesseract & Pillow (for image character recognition & preprocessors)
 
 ## Database
 - SQLite
@@ -80,10 +92,43 @@ The dashboard provides:
 CarbonLens/
 │
 ├── backend/
+│   └── settings.py
 ├── carbon_app/
+│   ├── services/       # Modular Ingestion package
+│   ├── models.py
+│   ├── views.py
+│   └── urls.py
 ├── frontend/
-├── sample_data/
+│   └── src/Dashboard.jsx
 ├── manage.py
 ├── requirements.txt
 ├── Procfile
 └── README.md
+```
+
+---
+
+# Setup & Run Instructions
+
+## 1. Quick Installation
+Install all Python dependencies in the root project directory:
+```powershell
+pip install -r requirements.txt
+```
+
+## 2. Tesseract OCR System Setup
+Since the Smart Upload reads image text, you must have Tesseract OCR on your machine:
+- **Windows**: Installs automatically! Our backend auto-detects Tesseract at `C:\Program Files\Tesseract-OCR\tesseract.exe`.
+- **Linux (Ubuntu)**: `sudo apt-get install tesseract-ocr`
+- **macOS**: `brew install tesseract`
+
+## 3. Run Backend Server
+```powershell
+python manage.py runserver
+```
+
+## 4. Run Frontend App
+In a new terminal, navigate to the `frontend/` folder and run:
+```powershell
+npm run start
+```

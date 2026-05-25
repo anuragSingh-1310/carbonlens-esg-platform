@@ -17,6 +17,32 @@ except ImportError:
     pdfplumber = None
 
 
+def configure_tesseract_path():
+    """
+    Checks common Tesseract OCR installation locations on Windows and programmatically
+    binds the executable path to pytesseract to bypass PATH environment variable issues.
+    """
+    if pytesseract is None:
+        return
+        
+    try:
+        # Standard Windows installation paths
+        common_paths = [
+            r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+            r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+            os.path.expandvars(r"%LOCALAPPDATA%\Programs\Tesseract-OCR\tesseract.exe"),
+            os.path.expandvars(r"%ProgramFiles%\Tesseract-OCR\tesseract.exe"),
+        ]
+
+        for path in common_paths:
+            if os.path.exists(path):
+                pytesseract.pytesseract.tesseract_cmd = path
+                logger.info(f"Auto-configured Tesseract binary path: {path}")
+                return
+    except Exception as e:
+        logger.warning(f"Failed to auto-configure Tesseract path: {str(e)}")
+
+
 def preprocess_image(image_file):
     """
     Applies image preprocessing to improve OCR accuracy.
@@ -88,6 +114,9 @@ def extract_text_from_image(image_file):
     if pytesseract is None:
         raise ImportError("pytesseract package is not installed in the python environment.")
         
+    # Auto-configure path in case Tesseract is installed but not added to system PATH
+    configure_tesseract_path()
+        
     try:
         # Preprocess the image to clean noise and enhance readability
         clean_img = preprocess_image(image_file)
@@ -97,7 +126,7 @@ def extract_text_from_image(image_file):
         return text.strip()
     except Exception as e:
         error_msg = str(e)
-        if "tesseract is not installed or it's not in your PATH" in error_msg.lower() or "no such file or directory" in error_msg.lower():
+        if "tesseract is not installed or it's not in your path" in error_msg.lower() or "no such file or directory" in error_msg.lower():
             logger.error("Tesseract-OCR binary was not found on this system.")
             raise RuntimeError(
                 "Tesseract OCR engine is not installed on the system, or not configured in system PATH. "
