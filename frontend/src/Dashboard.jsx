@@ -20,7 +20,9 @@ import {
 } from 'lucide-react';
 
 // Setup base configuration for API. Customize this as per dev environment setup.
-const API_BASE = 'https://carbonlens-esg-platform.onrender.com/api';
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://127.0.0.1:8000/api'
+  : 'https://carbonlens-esg-platform.onrender.com/api';
 
 // Simple Authorization config mapping for multi-tenant simulation
 const AXIOS_CONFIG = {
