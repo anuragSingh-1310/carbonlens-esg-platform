@@ -26,6 +26,9 @@ def configure_tesseract_path():
     if pytesseract is None:
         return
         
+    logger.info(f"Operating System: {os.name}")
+    logger.info(f"Tesseract Command: {pytesseract.pytesseract.tesseract_cmd}")
+        
     try:
         # 1. Check for environment variable override
         env_path = os.environ.get("TESSERACT_CMD")
@@ -37,13 +40,17 @@ def configure_tesseract_path():
             else:
                 logger.warning(f"TESSERACT_CMD env var specified but path does not exist: {env_path}")
 
-        # 2. Standard Windows installation paths fallback
-        common_paths = [
-            r"C:\Program Files\Tesseract-OCR\tesseract.exe",
-            r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
-            os.path.expandvars(r"%LOCALAPPDATA%\Programs\Tesseract-OCR\tesseract.exe"),
-            os.path.expandvars(r"%ProgramFiles%\Tesseract-OCR\tesseract.exe"),
-        ]
+        # 2. Standard installation paths fallback
+        if os.name == "nt":
+            common_paths = [
+                r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+                r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+            ]
+        else:
+            common_paths = [
+                "/usr/bin/tesseract",
+                "/usr/local/bin/tesseract",
+            ]
 
         for path in common_paths:
             if os.path.exists(path):
